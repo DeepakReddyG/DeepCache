@@ -238,6 +238,6 @@ If you use the original DeepCache method, please cite:
 
 | Member | Contribution |
 |---|---|
-| **Student A** | Environment setup, notebook implementation, SD v1.5 timing experiments, CLIP Score evaluation |
-| **Student B** | LDM-4-G ImageNet experiments, cache interval sweep (N ∈ {2,3,5,10,20}), benchmark table generation |
-| **Student C** | Literature review, report writing, fast-sampler compatibility analysis, repository documentation |
+| **Deepak Reddy G** | Environment setup, notebook implementation, SD v1.5 timing experiments, CLIP Score evaluation |
+| **Nihal K** | LDM-4-G ImageNet experiments, cache interval sweep (N ∈ {2,3,5,10,20}), benchmark table generation |
+| **Tharun Reddy M** | Literature review, report writing, fast-sampler compatibility analysis, repository documentation |

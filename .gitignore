@@ -1,3 +1,5 @@
 __pycache__
 output.png
 .git-history-backup/
+.hf-cache/
+venv/

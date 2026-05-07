@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="DeepCache",
-    version="v0.1.0",
+    version="0.1.0",
     author="Xinyin Ma",
     author_email="maxinyin@u.nus.edu",
     description="DeepCache: Accelerating Diffusion Models for Free",
@@ -18,6 +18,14 @@ setuptools.setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    install_requires=['torch', 'diffusers', 'transformers'],
+    install_requires=[
+        "diffusers",
+        "numpy",
+        "Pillow",
+        "streamlit",
+        "torch",
+        "torchvision",
+        "transformers",
+    ],
     python_requires='>=3.6',
 )

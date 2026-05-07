@@ -92,6 +92,13 @@ We here take the Stable Diffusion pipeline as an example. You can replace pipe w
 python main.py --model_type sdxl #Support [sdxl, sd1.5, sd2.1, svd, sd-inpaint, sdxl-inpaint, sd-img2img]
 ```
 
+### Web demo
+```bash
+python run_app.py
+```
+
+The Streamlit demo loads model weights only when you click `Generate Images` and stores Hugging Face cache files in the project-local `.hf-cache/` directory.
+
 ## Experimental code for DeepCache
 The above implementation does not require changes to the `forward` or `__call__` functions in the Diffusers pipeline, and is, therefore, more general. The following section is the experimental code that can be used to reproduce the results in the paper. It is implemented one by one for different model structures and pipelines, and thus, may not work properly due to the update of diffusers.
 
@@ -257,7 +264,6 @@ We warmly welcome contributions from everyone. Please feel free to reach out to 
   year={2024}
 }
 ```
-
 
 
 

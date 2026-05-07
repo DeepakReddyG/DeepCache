@@ -1,10 +1,64 @@
-import streamlit as st
+import hashlib
+import os
 import time
-import torch
+
 import numpy as np
+import torch
 from PIL import Image
 from diffusers import StableDiffusionPipeline
+
 from DeepCache import DeepCacheSDHelper
+
+
+def _install_hashlib_fallbacks():
+    if hasattr(hashlib, "blake2b") and hasattr(hashlib, "blake2s"):
+        return
+
+    class _HashFallback:
+        def __init__(self, algorithm, data=b"", digest_size=None):
+            self._hash = algorithm()
+            if data:
+                self.update(data)
+            self._digest_size = digest_size
+
+        def update(self, data):
+            self._hash.update(data)
+
+        def digest(self):
+            digest = self._hash.digest()
+            if self._digest_size is not None:
+                return digest[: self._digest_size]
+            return digest
+
+        def hexdigest(self):
+            return self.digest().hex()
+
+        def copy(self):
+            clone = self.__class__.__new__(self.__class__)
+            clone._hash = self._hash.copy()
+            clone._digest_size = self._digest_size
+            return clone
+
+    if not hasattr(hashlib, "blake2b"):
+        hashlib.blake2b = lambda data=b"", digest_size=64, **_: _HashFallback(  # type: ignore[attr-defined]
+            hashlib.sha512, data=data, digest_size=digest_size
+        )
+    if not hasattr(hashlib, "blake2s"):
+        hashlib.blake2s = lambda data=b"", digest_size=32, **_: _HashFallback(  # type: ignore[attr-defined]
+            hashlib.sha256, data=data, digest_size=digest_size
+        )
+
+
+_install_hashlib_fallbacks()
+
+import streamlit as st
+
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+HF_CACHE_DIR = os.path.join(PROJECT_ROOT, ".hf-cache")
+os.makedirs(HF_CACHE_DIR, exist_ok=True)
+os.environ.setdefault("HF_HOME", HF_CACHE_DIR)
+os.environ.setdefault("HUGGINGFACE_HUB_CACHE", os.path.join(HF_CACHE_DIR, "hub"))
+os.environ.setdefault("TRANSFORMERS_CACHE", os.path.join(HF_CACHE_DIR, "transformers"))
 
 def generate_heatmap(img1, img2):
     # Convert to float to avoid overflow
@@ -49,7 +103,9 @@ def load_model(model_id):
         dtype = torch.float32
         
     pipe = StableDiffusionPipeline.from_pretrained(
-        model_id, torch_dtype=dtype
+        model_id,
+        torch_dtype=dtype,
+        cache_dir=HF_CACHE_DIR,
     ).to(device)
     return pipe
 
@@ -58,15 +114,25 @@ def set_seed(s):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(s)
 
-with st.spinner(f"Loading Model {model_id}... (This may take a minute)"):
-    try:
-        pipe = load_model(model_id)
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        st.stop()
+if torch.cuda.is_available():
+    device_label = "CUDA"
+elif torch.backends.mps.is_available():
+    device_label = "MPS"
+else:
+    device_label = "CPU"
+
+st.caption(f"Runtime device: `{device_label}`")
+st.info("The model is loaded only when you click Generate Images, so the app can start even before the weights are cached locally.")
 
 # --- Generation Logic ---
 if st.button("Generate Images", type="primary"):
+    with st.spinner(f"Loading Model {model_id}... (This may take a minute)"):
+        try:
+            pipe = load_model(model_id)
+        except Exception as e:
+            st.error(f"Error loading model: {e}")
+            st.stop()
+
     col1, col2 = st.columns(2)
     
     # 1. Run Baseline

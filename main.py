@@ -1,4 +1,5 @@
 import argparse
+import os
 import time
 
 import torch
@@ -6,10 +7,26 @@ from torchvision.utils import save_image
 
 from DeepCache import DeepCacheSDHelper
 
+PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+HF_CACHE_DIR = os.path.join(PROJECT_ROOT, ".hf-cache")
+os.makedirs(HF_CACHE_DIR, exist_ok=True)
+os.environ.setdefault("HF_HOME", HF_CACHE_DIR)
+os.environ.setdefault("HUGGINGFACE_HUB_CACHE", os.path.join(HF_CACHE_DIR, "hub"))
+os.environ.setdefault("TRANSFORMERS_CACHE", os.path.join(HF_CACHE_DIR, "transformers"))
+
 
 def set_random_seed(seed):
     torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
+
+
+def get_runtime_device():
+    if torch.cuda.is_available():
+        return "cuda:0", torch.float16
+    if torch.backends.mps.is_available():
+        return "mps", torch.float16
+    return "cpu", torch.float32
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -20,44 +37,63 @@ if __name__ == "__main__":
     parser.add_argument("--cache_interval", type=int, default=3)
     parser.add_argument("--cache_branch_id", type=int, default=0)
     args = parser.parse_args()
+    device, dtype = get_runtime_device()
+    fp16_kwargs = {"variant": "fp16"} if dtype == torch.float16 else {}
 
     if args.model_type.lower() == 'sdxl':
         from diffusers import StableDiffusionXLPipeline
         pipe = StableDiffusionXLPipeline.from_pretrained(
-            'stabilityai/stable-diffusion-xl-base-1.0', torch_dtype=torch.float16, variant="fp16", use_safetensors=True
-        ).to("cuda:0")
+            'stabilityai/stable-diffusion-xl-base-1.0',
+            torch_dtype=dtype,
+            use_safetensors=True,
+            cache_dir=HF_CACHE_DIR,
+            **fp16_kwargs,
+        ).to(device)
     elif args.model_type.lower() == 'sd1.5':
         from diffusers import StableDiffusionPipeline
         pipe = StableDiffusionPipeline.from_pretrained(
-            'runwayml/stable-diffusion-v1-5', torch_dtype=torch.float16
-        ).to("cuda:0")
+            'runwayml/stable-diffusion-v1-5', torch_dtype=dtype, cache_dir=HF_CACHE_DIR
+        ).to(device)
     elif args.model_type.lower() == 'sd2.1':
         from diffusers import StableDiffusionPipeline
         pipe = StableDiffusionPipeline.from_pretrained(
-            'stabilityai/stable-diffusion-2-1-base', torch_dtype=torch.float16
-        ).to("cuda:0")
+            'stabilityai/stable-diffusion-2-1-base', torch_dtype=dtype, cache_dir=HF_CACHE_DIR
+        ).to(device)
     elif args.model_type.lower() == 'svd':
         from diffusers import StableVideoDiffusionPipeline 
         pipe = StableVideoDiffusionPipeline.from_pretrained(
-            "stabilityai/stable-video-diffusion-img2vid-xt", torch_dtype=torch.float16, variant="fp16"
+            "stabilityai/stable-video-diffusion-img2vid-xt",
+            torch_dtype=dtype,
+            cache_dir=HF_CACHE_DIR,
+            **fp16_kwargs,
         )
-        pipe.enable_model_cpu_offload()
+        if device == "cuda:0":
+            pipe.enable_model_cpu_offload()
+        else:
+            pipe = pipe.to(device)
     elif args.model_type.lower() == 'sd-inpaint':
         from diffusers import StableDiffusionInpaintPipeline
         pipe = StableDiffusionInpaintPipeline.from_pretrained(
-            'runwayml/stable-diffusion-inpainting', torch_dtype=torch.float16
-        ).to("cuda:0")
+            'runwayml/stable-diffusion-inpainting', torch_dtype=dtype, cache_dir=HF_CACHE_DIR
+        ).to(device)
     elif args.model_type.lower() == 'sdxl-inpaint':
         from diffusers import StableDiffusionXLInpaintPipeline
         pipe = StableDiffusionXLInpaintPipeline.from_pretrained(
-            'diffusers/stable-diffusion-xl-1.0-inpainting-0.1', torch_dtype=torch.float16
-        ).to("cuda:0")
+            'diffusers/stable-diffusion-xl-1.0-inpainting-0.1', torch_dtype=dtype, cache_dir=HF_CACHE_DIR
+        ).to(device)
     elif args.model_type.lower() == 'sd-img2img':
         from diffusers import StableDiffusionImg2ImgPipeline
         pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-            "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16, variant="fp16", use_safetensors=True
+            "runwayml/stable-diffusion-v1-5",
+            torch_dtype=dtype,
+            use_safetensors=True,
+            cache_dir=HF_CACHE_DIR,
+            **fp16_kwargs,
         )
-        pipe.enable_model_cpu_offload()
+        if device == "cuda:0":
+            pipe.enable_model_cpu_offload()
+        else:
+            pipe = pipe.to(device)
     else:
         raise NotImplementedError
 

@@ -131,7 +131,7 @@ Loading pipeline components...: 100%|██████████████�
 
 You can add `--refine` at the end of the command to activate the refiner model for SDXL.
 
-### Stable Diffusion v1.5
+### Stable Diffusion Version 1.5 (v1.5)
 ```bash
 python stable_diffusion.py --model runwayml/stable-diffusion-v1-5
 ```

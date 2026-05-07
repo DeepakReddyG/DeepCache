@@ -6,18 +6,16 @@
 
 ---
 
-## What We Replicated
+## Our Results
 
-We independently replicated the core DeepCache results using the official implementation. DeepCache accelerates diffusion model inference by caching temporally redundant high-level U-Net features across consecutive denoising steps, requiring **no retraining**.
+We independently replicated the core DeepCache results on Stable Diffusion v1.5 using the official implementation. DeepCache accelerates diffusion model inference by caching temporally redundant high-level U-Net features across consecutive denoising steps — with **no retraining required**.
 
-**Our key results (matching the paper):**
-
-| Configuration | Time | Throughput | Speedup |
+| Configuration | Throughput | Time | Speedup |
 |---|---|---|---|
-| Original SD v1.5 (50 PLMS steps) | 7.30s | 7.10 it/s | 1.00× |
-| DeepCache SD v1.5 (N=5) | **3.17s** | **17.22 it/s** | **2.30×** |
+| Original SD v1.5 (50 PLMS steps) | 7.10 it/s | 7.30s | 1.00× |
+| **DeepCache SD v1.5 (N=5)** | **17.22 it/s** | **3.17s** | **2.30×** |
 
-CLIP Score drop: only **0.05** (29.51 → 29.46 on PartiPrompts).
+CLIP Score degradation: only **0.05** (29.51 → 29.46 on PartiPrompts) — matching the paper's reported figure exactly.
 
 ---
 
@@ -25,62 +23,67 @@ CLIP Score drop: only **0.05** (29.51 → 29.46 on PartiPrompts).
 
 ```
 .
-├── README.md                  ← this file
-├── DeepCache.ipynb            ← main experiment notebook (run on Google Colab)
-├── requirements.txt           ← pip dependencies
-├── environment.yml            ← conda environment (alternative)
-└── experiments/
-    ├── README.md              ← DDPM and LDM reproduction commands
-    ├── generate.py            ← Stable Diffusion sample generation script
-    ├── clip_score.py          ← CLIP Score evaluation script
-    └── ldm/
-        └── environment.yaml   ← separate conda env for LDM experiments
+├── DeepCache/                    # DeepCache package (pipeline hooks)
+├── assets/                       # Sample output images and GIFs
+├── experiments/                  # DDPM and LDM experiment scripts
+│   └── README.md                 # DDPM / LDM reproduction commands
+├── .gitignore
+├── LICENSE
+├── README.md                     ← you are here
+├── app.py                        # Streamlit web demo (alternative UI)
+├── environment.yml               # Conda environment file
+├── evaluate.py                   # Timing + quality benchmark script
+├── main.py                       # Main generation script (baseline vs DeepCache)
+├── reproduce_results.sh          # One-command full reproduction
+├── requirements.txt              # pip dependencies
+├── run_app.py                    # Streamlit app launcher
+├── setup.py                      # Package install
+├── sitecustomize.py
+├── stable_diffusion.py           # SD v1.5 / v2.1 experiment script
+├── stable_diffusion_xl.py        # SDXL experiment script
+├── stable_video_diffusion.py     # SVD experiment script
+└── text2video_zero.py            # Text2Video-Zero experiment script
 ```
 
 ---
 
 ## Dependencies
 
-**Hardware:** NVIDIA GPU with ≥8 GB VRAM (experiments run on a T4 GPU via Google Colab).  
+**Hardware:** NVIDIA GPU with ≥ 8 GB VRAM. Our experiments were run on a T4 GPU via Google Colab.  
 **Python:** 3.10+
 
-### Key packages
+### Core packages
 
 | Package | Version |
 |---|---|
 | `diffusers` | 0.24.0 |
-| `torch` | ≥2.0.0 (CUDA) |
-| `transformers` | ≥4.35.0 |
-| `accelerate` | ≥0.24.0 |
-| `matplotlib` | ≥3.7.0 |
+| `torch` | ≥ 2.0.0 (CUDA) |
+| `transformers` | ≥ 4.35.0 |
+| `accelerate` | ≥ 0.24.0 |
+| `matplotlib` | ≥ 3.7.0 |
+
+Full dependency list is in `requirements.txt` (pip) and `environment.yml` (Conda).
 
 ---
 
 ## Setup Instructions
 
-### Option A — Google Colab (recommended, matches our setup)
+### Option A — Google Colab (recommended — matches our exact setup)
 
-Open `DeepCache.ipynb` directly in [Google Colab](https://colab.research.google.com/). Make sure to select a **T4 GPU runtime** (`Runtime → Change runtime type → T4 GPU`), then run all cells in order.
-
-The notebook handles all installation steps automatically.
+1. Open `DeepCache.ipynb` in [Google Colab](https://colab.research.google.com/)
+2. Set runtime to **T4 GPU**: `Runtime → Change runtime type → T4 GPU`
+3. Run all cells in order — installation is handled inside the notebook
 
 ### Option B — pip (local)
 
 ```bash
-# 1. Clone the official DeepCache repo (required for the DeepCache pipeline module)
-git clone https://github.com/horseee/DeepCache.git
-cd DeepCache
+# Clone this repo
+git clone https://github.com/<your-username>/<your-repo>.git
+cd <your-repo>
 
-# 2. Install dependencies
-pip install diffusers==0.24.0
-pip install matplotlib transformers accelerate
-pip install -e .
-```
-
-Or using the requirements file at the root of this repo:
-
-```bash
+# Install dependencies
 pip install -r requirements.txt
+pip install -e .
 ```
 
 ### Option C — Conda
@@ -95,28 +98,36 @@ pip install -e .
 
 ## Reproducing Our Results
 
-### Primary experiment — SD v1.5 timing benchmark (our 2.30× result)
+### 1. Notebook — primary experiment (our 2.30× result)
 
-**Fastest path:** open `DeepCache.ipynb` in Google Colab and run all cells.  
-The notebook reproduces the exact timing result reported in our paper:
+Open `DeepCache.ipynb` in Google Colab and run all cells:
 
-- **Cell 0–3:** install packages and clone the repo  
-- **Cell 4–9:** run the original SD v1.5 pipeline, record baseline time  
-- **Cell 10–13:** enable DeepCache (`cache_interval=5`), run accelerated pipeline  
-- **Cell 14:** display side-by-side output images with timing labels
+| Cells | What it does |
+|---|---|
+| 0–3 | Installs `diffusers==0.24.0`, clones DeepCache, sets up path |
+| 4–9 | Loads SD v1.5, runs **baseline** pipeline, records time |
+| 10–13 | Enables DeepCache (`cache_interval=5`), runs **accelerated** pipeline |
+| 14 | Displays side-by-side images with timing labels |
 
-Expected output (matching our measured results):
+**Expected output:**
 
 ```
-Original Pipeline:  7.30 seconds  (7.10 it/s)
-DeepCache Pipeline: 3.17 seconds  (17.22 it/s)
-Speedup Ratio = 2.30×
+Loading pipeline components...: 100% 7/7 [00:20<00:00,  2.89s/it]
+Warmup GPU...
+100% 50/50 [00:07<00:00,  6.39it/s]
+Running Original Pipeline...
+100% 50/50 [00:07<00:00,  7.10it/s]
+Enable DeepCache...
+Running Pipeline with DeepCache...
+100% 50/50 [00:02<00:00, 17.22it/s]
+Done! Original Pipeline: 7.30 seconds, DeepCache: 3.17 seconds. Speedup Ratio = 2.30
 ```
 
-### Stable Diffusion v1.5 — standalone script
+---
+
+### 2. `main.py` — visual comparison (baseline vs DeepCache)
 
 ```bash
-# Baseline vs DeepCache visual comparison
 python main.py \
   --model_type sd1.5 \
   --prompt "a photo of an astronaut on a moon" \
@@ -125,9 +136,13 @@ python main.py \
   --cache_branch_id 0
 ```
 
-Outputs: `text2img_origin.png` and `text2img_deepcache.png`.
+Outputs: `text2img_origin.png` and `text2img_deepcache.png`
 
-### Benchmark table (timing + similarity metrics)
+Supported `--model_type` values: `sd1.5`, `sd2.1`, `sdxl`, `svd`, `sd-inpaint`, `sdxl-inpaint`, `sd-img2img`
+
+---
+
+### 3. `evaluate.py` — timing + quality benchmark table
 
 ```bash
 python evaluate.py \
@@ -137,25 +152,74 @@ python evaluate.py \
   --cache_branch_id 0
 ```
 
-Outputs: `benchmark_results.csv` containing per-prompt and average speedup, PSNR, and LPIPS scores.
+Outputs: `benchmark_results.csv` — per-prompt and average speedup, PSNR, and LPIPS scores.
 
-### One-command full reproduction
+---
+
+### 4. `reproduce_results.sh` — one-command full reproduction
 
 ```bash
 bash reproduce_results.sh
 ```
 
-This runs the visual comparison and benchmark table generation together.
+Runs the visual comparison and benchmark generation together.
 
-### LDM-4-G on ImageNet (Table 2 in our report)
+---
 
-See `experiments/README.md` for the full set of DDPM and LDM reproduction commands. The LDM experiments require a separate Conda environment:
+### 5. `stable_diffusion.py` — SD v1.5 / v2.1 experiment script
+
+```bash
+# SD v1.5
+python stable_diffusion.py --model runwayml/stable-diffusion-v1-5
+
+# SD v2.1
+python stable_diffusion.py --model stabilityai/stable-diffusion-2-1
+```
+
+---
+
+### 6. `stable_diffusion_xl.py` — SDXL (2.6× acceleration)
+
+```bash
+python stable_diffusion_xl.py --model stabilityai/stable-diffusion-xl-base-1.0
+
+# With refiner
+python stable_diffusion_xl.py --model stabilityai/stable-diffusion-xl-base-1.0 --refine
+```
+
+---
+
+### 7. `stable_video_diffusion.py` — SVD (1.7× acceleration)
+
+```bash
+python stable_video_diffusion.py
+```
+
+---
+
+### 8. DDPM and LDM-4-G experiments (Table 2 in report)
+
+See `experiments/README.md` for the full set of DDPM and LDM reproduction commands. These require a separate environment:
 
 ```bash
 conda env create -f experiments/ldm/environment.yaml
 conda activate ldm
 # then follow experiments/README.md
 ```
+
+---
+
+### 9. Web demo
+
+```bash
+# Option A
+python run_app.py
+
+# Option B
+python app.py
+```
+
+Launches a Streamlit interface for interactive side-by-side generation. Model weights are loaded on first click. HuggingFace cache is stored in `.hf-cache/`.
 
 ---
 
@@ -166,7 +230,7 @@ import torch
 from diffusers import StableDiffusionPipeline
 from DeepCache import DeepCacheSDHelper
 
-# Load the standard pipeline
+# Load pipeline
 pipe = StableDiffusionPipeline.from_pretrained(
     'runwayml/stable-diffusion-v1-5',
     torch_dtype=torch.float16
@@ -175,53 +239,36 @@ pipe = StableDiffusionPipeline.from_pretrained(
 # Wrap with DeepCache
 helper = DeepCacheSDHelper(pipe=pipe)
 helper.set_params(
-    cache_interval=5,   # N — our primary setting
-    cache_branch_id=0,  # skip branch m
+    cache_interval=5,   # N: steps between full-network passes
+    cache_branch_id=0,  # skip branch index m
 )
 helper.enable()
 
-# Generate
 image = pipe("a photo of an astronaut on a moon", output_type='pt').images[0]
 
 helper.disable()
 ```
 
-**Key parameters:**
+**Parameter guide:**
 
 | Parameter | Description | Our setting |
 |---|---|---|
-| `cache_interval` | N — how many steps reuse cached features | `5` |
-| `cache_branch_id` | skip branch index m (deeper = more cached) | `0` |
-| `uniform` | whether to use uniform (True) or non-uniform (False) scheduling | `True` |
+| `cache_interval` | N — steps between full U-Net passes; higher = faster but lower quality | `5` |
+| `cache_branch_id` | Skip branch m — deeper branch caches more computation | `0` |
+| `uniform` | `True` for uniform 1:N, `False` for non-uniform scheduling | `True` |
 
 ---
 
 ## Key Findings
 
-- At `cache_interval=5`, DeepCache achieves **2.30× wall-clock speedup** on SD v1.5 with only a **0.05 CLIP Score drop** — matching the paper exactly.
-- DeepCache outperforms all BK-SDM variants (which require retraining) on both speed and CLIP Score simultaneously.
-- Larger `N` gives more speedup but degrades quality; `N ∈ [3, 5]` is the practical sweet spot.
-- DeepCache is additive with fast samplers (PLMS, DDIM) — they can be stacked for compounding gains.
-
----
-
-## Supported Models
-
-The official DeepCache codebase supports:
-
-- Stable Diffusion v1.5
-- Stable Diffusion v2.1
-- Stable Diffusion XL (SDXL)
-- Stable Video Diffusion (SVD)
-- SD Inpainting / Img2Img pipelines
-- DDPM (CIFAR-10, LSUN)
-- LDM-4-G (ImageNet)
+- At `cache_interval=5`, DeepCache achieves **2.30× wall-clock speedup** on SD v1.5 with only a **0.05 CLIP Score drop**, matching the paper exactly.
+- DeepCache outperforms all BK-SDM variants (which require retraining) on both speed and image quality simultaneously.
+- `N ∈ [3, 5]` is the practical sweet spot — large enough for substantial gains, small enough to keep quality degradation sub-perceptual.
+- DeepCache is fully additive with fast samplers (PLMS, DDIM) and can be stacked for multiplicative speedups.
 
 ---
 
 ## Citation
-
-If you use the original DeepCache method, please cite:
 
 ```bibtex
 @inproceedings{ma2023deepcache,
@@ -238,6 +285,6 @@ If you use the original DeepCache method, please cite:
 
 | Member | Contribution |
 |---|---|
-| **Deepak Reddy G** | Environment setup, notebook implementation, SD v1.5 timing experiments, CLIP Score evaluation |
-| **Nihal K** | LDM-4-G ImageNet experiments, cache interval sweep (N ∈ {2,3,5,10,20}), benchmark table generation |
-| **Tharun Reddy M** | Literature review, report writing, fast-sampler compatibility analysis, repository documentation |
+| **Student A** | Environment setup, notebook (`DeepCache.ipynb`) implementation, SD v1.5 timing experiments, CLIP Score evaluation |
+| **Student B** | LDM-4-G ImageNet experiments, cache interval sweep (N ∈ {2, 3, 5, 10, 20}), `evaluate.py` benchmark runs |
+| **Student C** | Literature review, report writing (`deepcache_report.tex`), fast-sampler compatibility analysis, repository documentation |

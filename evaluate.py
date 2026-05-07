@@ -1,5 +1,7 @@
 import argparse
 import time
+import csv
+import os
 import torch
 import numpy as np
 from tqdm import tqdm
@@ -146,6 +148,26 @@ def main():
     if LPIPS_AVAILABLE:
         print(f"Avg LPIPS:          {np.mean(lpips_scores):.4f} (Lower is better, <0.1 is almost identical)")
     print("="*50)
+
+    # --- Export to CSV ---
+    csv_file = "benchmark_results.csv"
+    file_exists = os.path.isfile(csv_file)
+    with open(csv_file, mode='a', newline='') as f:
+        writer = csv.writer(f)
+        if not file_exists:
+            writer.writerow(["Model", "Cache Interval", "Cache Branch ID", "Num Prompts", "Avg Baseline Time", "Avg DeepCache Time", "Speedup Ratio", "Avg PSNR", "Avg LPIPS"])
+        writer.writerow([
+            args.model,
+            args.cache_interval,
+            args.cache_branch_id,
+            len(prompts_to_test),
+            f"{avg_base_time:.3f}",
+            f"{avg_deep_time:.3f}",
+            f"{speedup:.2f}",
+            f"{np.mean(psnr_scores):.2f}",
+            f"{np.mean(lpips_scores):.4f}" if LPIPS_AVAILABLE else "N/A"
+        ])
+    print(f"\nResults successfully exported and appended to {csv_file}")
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,63 @@
+# =============================================================================
+# DeepCache – Conda environment
+# Verified on: Google Colab (Python 3.12, CUDA 12.8)
+#
+# Create:   conda env create -f environment.yml
+# Activate: conda activate deepcache
+# Finish:   pip install -e .
+#
+# Note: torch/torchvision are installed via pip so that pip can resolve the
+#       correct CUDA wheel for your hardware automatically.
+# =============================================================================
+
+name: deepcache
+
+channels:
+  - defaults
+
+dependencies:
+  - python=3.12
+  - pip
+
+  - pip:
+    # ------------------------------------------------------------------
+    # Core deep-learning stack  (Colab-verified versions)
+    # ------------------------------------------------------------------
+    - torch==2.10.0
+    - torchvision==0.25.0
+
+    # ------------------------------------------------------------------
+    # Diffusion-model libraries  (Colab-verified versions)
+    # ------------------------------------------------------------------
+    - diffusers==0.37.1
+    - transformers==5.0.0
+    - accelerate==1.13.0
+    - safetensors==0.7.0
+    - tokenizers==0.22.2
+    - huggingface-hub==1.11.0
+
+    # ------------------------------------------------------------------
+    # Numerical / image utilities  (Colab-verified versions)
+    # ------------------------------------------------------------------
+    - numpy==2.0.2
+    - Pillow==11.3.0
+    - tqdm==4.67.3
+    - scipy==1.13.1
+
+    # ------------------------------------------------------------------
+    # Evaluation metrics
+    # ------------------------------------------------------------------
+    - open_clip_torch==2.26.1
+    - lpips==0.1.4
+    - pytorch_fid==0.3.0
+
+    # ------------------------------------------------------------------
+    # Data loading
+    # ------------------------------------------------------------------
+    - datasets==2.21.0
+    - lmdb==1.5.1
+
+    # ------------------------------------------------------------------
+    # Web demo
+    # ------------------------------------------------------------------
+    - streamlit==1.57.0

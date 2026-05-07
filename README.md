@@ -55,6 +55,53 @@ We introduce **DeepCache**, a novel **training-free and almost lossless** paradi
 
 ## Quick Start
 
+### 1. Install
+
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e .
+```
+
+Or with Conda:
+
+```bash
+conda env create -f environment.yml
+conda activate deepcache
+pip install -e .
+```
+
+### 2. Generate images (baseline vs DeepCache)
+
+```bash
+python main.py --model_type sd1.5 \
+               --prompt "a photo of an astronaut on a moon" \
+               --seed 42 \
+               --cache_interval 3 \
+               --cache_branch_id 0
+```
+
+Outputs: `text2img_origin.png` and `text2img_deepcache.png`.
+
+### 3. Benchmark (timing + quality metrics)
+
+```bash
+python evaluate.py --model runwayml/stable-diffusion-v1-5 \
+                   --num_prompts 5 \
+                   --cache_interval 3 \
+                   --cache_branch_id 0
+```
+
+Outputs: `benchmark_results.csv` with per-prompt and average speedup, PSNR, and LPIPS.
+
+### 4. One-command reproduction
+
+```bash
+bash reproduce_results.sh
+```
+
 ## Submission Checklist
 
 This repository includes the items required for submission:

@@ -233,7 +233,7 @@ Images in the upper line are the baselines and the images in the lower line are 
 </div>
 
 
-### Stable Diffusion v1.5
+### Stable Diffusion version 1.5 (v1.5)
 
 <div align="center">
 <img width="80%" alt="image" src="https://github.com/horseee/DeepCache/assets/18592211/e9bd7a8e-07c8-4296-95a2-12d008995807">

@@ -55,10 +55,31 @@ We introduce **DeepCache**, a novel **training-free and almost lossless** paradi
 
 ## Quick Start
 
+## Submission Checklist
+
+This repository includes the items required for submission:
+
+* `README.md`: setup, dependencies, and reproduction instructions.
+* Source code: the root scripts, the `DeepCache/` package, and the `experiments/` directory.
+* Reproduction scripts:
+  * `reproduce_results.sh` for the main demo and benchmark outputs.
+  * `main.py` and `evaluate.py` for image generation and timing/quality tables.
+  * `experiments/generate.py` and `experiments/clip_score.py` for Stable Diffusion experiment artifacts.
+  * `experiments/README.md` for DDPM/LDM experiment commands.
+* Environment files:
+  * `requirements.txt` for the main project environment.
+  * `experiments/ldm/environment.yaml` for the LDM subproject.
+
 ### Install
 ```bash
-pip install DeepCache
+python -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+pip install -e .
 ```
+
+Dependencies used by the main project are listed in `requirements.txt`. For the LDM experiment subtree, use the separate Conda environment in `experiments/ldm/environment.yaml`.
 
 ### Usage
 
@@ -98,6 +119,41 @@ python run_app.py
 ```
 
 The Streamlit demo loads model weights only when you click `Generate Images` and stores Hugging Face cache files in the project-local `.hf-cache/` directory.
+
+## Reproducing Results
+
+### Main demo outputs
+Generate the baseline and DeepCache images used for a direct visual comparison:
+
+```bash
+python main.py --model_type sd1.5 --prompt "a photo of an astronaut on a moon" --seed 42 --cache_interval 3 --cache_branch_id 0
+```
+
+This writes `text2img_origin.png` and `text2img_deepcache.png`.
+
+### Main benchmark table
+Regenerate the timing and similarity metrics table used for the report:
+
+```bash
+python evaluate.py --model runwayml/stable-diffusion-v1-5 --num_prompts 5 --cache_interval 3 --cache_branch_id 0
+```
+
+This appends results to `benchmark_results.csv`, including average baseline time, DeepCache time, speedup ratio, PSNR, and optionally LPIPS.
+
+### One-command reproduction helper
+Run the main commands above together with the Stable Diffusion experiment pipeline:
+
+```bash
+bash reproduce_results.sh
+```
+
+### Experiment-specific scripts
+Additional experiment entrypoints used to regenerate paper-style artifacts are grouped under `experiments/`:
+
+* `experiments/generate.py`: generates Stable Diffusion experiment samples.
+* `experiments/clip_score.py`: computes CLIP-based evaluation for generated samples.
+* `experiments/README.md`: DDPM and LDM reproduction commands.
+* `experiments/ldm/environment.yaml`: separate environment for the LDM subtree.
 
 ## Experimental code for DeepCache
 The above implementation does not require changes to the `forward` or `__call__` functions in the Diffusers pipeline, and is, therefore, more general. The following section is the experimental code that can be used to reproduce the results in the paper. It is implemented one by one for different model structures and pipelines, and thus, may not work properly due to the update of diffusers.
@@ -264,7 +320,6 @@ We warmly welcome contributions from everyone. Please feel free to reach out to 
   year={2024}
 }
 ```
-
 
 
 

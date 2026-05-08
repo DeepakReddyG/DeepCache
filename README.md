@@ -184,7 +184,7 @@ python main.py \
   --cache_branch_id 0
 ```
 
-Outputs: `text2img_origin.png` and `text2img_deepcache.png`
+Outputs: `text2img_origin.png` & `text2img_deepcache.png`
 
 Supported `--model_type` values: `sd1.5`, `sd2.1`, `sdxl`, `svd`, `sd-inpaint`, `sdxl-inpaint`, `sd-img2img`
 

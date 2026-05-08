@@ -335,4 +335,4 @@ helper.disable()
 |---|---|
 | **Deepak Reddy Gathpa** | Environment setup, notebook (`DeepCache.ipynb`) implementation, SD v1.5 timing experiments, CLIP Score evaluation |
 | **Nihal Koppu** | LDM-4-G ImageNet experiments, cache interval sweep (N ∈ {2, 3, 5, 10, 20}), `evaluate.py` benchmark runs |
-| **Tharun Reddy M** | Literature review, report writing (`deepcache_report.tex`), fast-sampler compatibility analysis, repository documentation |
+| **Tharun Reddy Mettukuru** | Literature review, report writing (`deepcache_report.tex`), fast-sampler compatibility analysis, repository documentation |
